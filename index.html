@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kundendaten</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            transition: border-color 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .btn-small {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #1e40af;
+        }
+        .btn-secondary {
+            background-color: #f9fafb;
+            color: #1f2937;
+            border: 1px solid #d1d5db;
+        }
+        .btn-secondary:hover {
+            background-color: #e5e7eb;
+        }
+        .btn-danger {
+            background-color: #ef4444;
+            color: #ffffff;
+        }
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+        .table-header {
+            background-color: #4b5563;
+            color: #ffffff;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+        .table-header th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        .message-box.success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .message-box.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal {
+            background-color: #ffffff;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            text-align: center;
+        }
+        .cursor-pointer {
+            cursor: pointer;
+        }
+        /* Style für die mobile Kartenansicht der Tabelle */
+        @media (max-width: 767px) {
+            .table-container.table-responsive .customer-card {
+                display: block;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+                background-color: #fff;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            }
+            .table-container.table-responsive .customer-card div {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.25rem 0;
+                border-bottom: 1px solid #f3f4f6;
+            }
+            .table-container.table-responsive .customer-card div:last-child {
+                border-bottom: none;
+            }
+            .table-container.table-responsive .customer-card .label {
+                font-weight: 600;
+                color: #4b5563;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+            }
+            .table-container.table-responsive .customer-card .actions {
+                border-top: 1px solid #e5e7eb;
+                margin-top: 0.75rem;
+                padding-top: 0.75rem;
+                justify-content: flex-end;
+            }
+            /* Tabellenansicht auf mobilen Geräten ausblenden */
+            .table-container.table-responsive table {
+                display: none;
+            }
+            /* Tabellenansicht auf dem Desktop einblenden */
+            .table-container table {
+                display: table;
+            }
+            .table-container .customer-card {
+                display: none;
+            }
+        }
+        /* Geringerer Zeilenabstand in der Tabelle */
+        .customer-row-compact td {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        /* Geringerer Abstand im Formular */
+        .form-grid-compact {
+            gap: 0.75rem;
+        }
+        .form-field-compact {
+            margin-bottom: 0.5rem;
+        }
+        .form-field-compact:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+
+    <div class="container max-w-6xl mx-auto p-4 md:p-8">
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-4">Kundendaten</h1>
+        
+        <div id="status-message" class="message-box success hidden"></div>
+
+        <div class="flex justify-end mb-4">
+            <button id="add-customer-btn" class="btn btn-primary btn-small">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block -mt-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+                </svg>
+                Neuen Kunden hinzufügen
+            </button>
+        </div>
+
+        <div id="form-card" class="bg-white p-6 rounded-xl shadow-lg border border-gray-200 mb-8 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-gray-800" id="form-heading">Neuen Kunden hinzufügen</h2>
+                <button id="close-form-btn" class="text-gray-500 hover:text-gray-800 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            
+            <form id="customer-form" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                <div class="form-field-compact flex items-center space-x-2">
+                    <label for="name" class="text-sm font-medium text-gray-700 w-1/4">Name</label>
+                    <input type="text" id="name" class="form-input" required>
+                </div>
+                <div class="form-field-compact flex items-center space-x-2">
+                    <label for="phone" class="text-sm font-medium text-gray-700 w-1/4">Telefon</label>
+                    <input type="tel" id="phone" class="form-input">
+                </div>
+                <div class="form-field-compact flex items-center space-x-2">
+                    <label for="street" class="text-sm font-medium text-gray-700 w-1/4">Straße</label>
+                    <input type="text" id="street" class="form-input">
+                </div>
+                <div class="form-field-compact flex items-center space-x-2">
+                    <label for="city" class="text-sm font-medium text-gray-700 w-1/4">Ort</label>
+                    <input type="text" id="city" class="form-input">
+                </div>
+                <div class="lg:col-span-4 flex justify-end mt-2 gap-2">
+                    <button type="button" id="delete-btn" class="btn btn-danger hidden btn-small">Löschen</button>
+                    <button type="button" id="cancel-btn" class="btn btn-secondary hidden btn-small">Abbrechen</button>
+                    <button type="submit" id="submit-btn" class="btn btn-primary btn-small">Hinzufügen</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        </div>
+        
+        <div class="w-full flex-grow mb-6 flex items-center space-x-2">
+            <label for="search-input" class="text-sm font-medium text-gray-700">Kunden suchen:</label>
+            <input type="text" id="search-input" class="form-input" />
+        </div>
+
+        <div class="table-container table-responsive bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <div class="overflow-x-auto max-h-[60vh] overflow-y-scroll">
+                <div id="no-customers-message" class="text-center py-12 text-gray-500 hidden">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+                    </svg>
+                    <h3 class="mt-2 text-sm font-semibold text-gray-900">Keine Kunden</h3>
+                    <p class="mt-1 text-sm text-gray-500">
+                        Beginnen Sie, indem Sie oben einen neuen Kunden hinzufügen.
+                    </p>
+                </div>
+                <table class="min-w-full bg-white rounded-xl" id="customer-table">
+                    <thead>
+                        <tr class="table-header">
+                            <th class="py-3 px-4 text-left rounded-tl-xl">Name</th>
+                            <th class="py-3 px-4 text-left">Telefon</th>
+                            <th class="py-3 px-4 text-left">Straße</th>
+                            <th class="py-3 px-4 text-left rounded-tr-xl">Ort</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customer-table-body" class="text-gray-800">
+                        </tbody>
+                </table>
+                <div id="customer-cards-container" class="md:hidden">
+                    </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end mt-4 gap-2">
+            <button id="clear-all-btn" class="btn btn-danger btn-small flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm6 0a1 1 0 012 0v6a1 1 0 11-2 0V8z" clip-rule="evenodd" />
+                </svg>
+                Alles löschen
+            </button>
+            <button id="import-btn" class="btn btn-primary btn-small flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+                Import
+            </button>
+            <input type="file" id="csv-file-input" class="hidden" accept=".csv">
+            <button id="export-btn" class="btn btn-primary btn-small flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-9.707a1 1 0 011.414 0L9 9.586V3a1 1 0 112 0v6.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+                Export
+            </button>
+        </div>
+    </div>
+
+    <div id="delete-modal" class="modal-overlay">
+        <div class="modal">
+            <h3 class="text-xl font-bold mb-4">Kunden löschen</h3>
+            <p id="delete-message" class="mb-6">Möchten Sie diesen Kunden wirklich löschen?</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-delete-btn" class="btn btn-danger">Ja, löschen</button>
+                <button id="cancel-delete-btn" class="btn btn-secondary">Nein, abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="clear-all-modal" class="modal-overlay">
+        <div class="modal">
+            <h3 class="text-xl font-bold mb-4">Alle Daten löschen</h3>
+            <p class="mb-6">Möchten Sie wirklich alle Kundendaten löschen? Dieser Vorgang kann nicht rückgängig gemacht werden!</p>
+            <input type="password" id="clear-password-input" class="form-input mb-4" placeholder="Passwort eingeben">
+            <p id="password-error" class="text-sm text-red-600 hidden mb-4">Falsches Passwort!</p>
+            <div class="flex justify-center gap-4">
+                <button id="confirm-clear-btn" class="btn btn-danger">Ja, alles löschen</button>
+                <button id="cancel-clear-btn" class="btn btn-secondary">Abbrechen</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('customer-form');
+            const formCard = document.getElementById('form-card');
+            const formHeading = document.getElementById('form-heading');
+            const customerTable = document.getElementById('customer-table');
+            const customerTableBody = document.getElementById('customer-table-body');
+            const customerCardsContainer = document.getElementById('customer-cards-container');
+            const submitBtn = document.getElementById('submit-btn');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const deleteModal = document.getElementById('delete-modal');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+            const searchInput = document.getElementById('search-input');
+            const noCustomersMessage = document.getElementById('no-customers-message');
+            const statusMessage = document.getElementById('status-message');
+            const deleteInFormBtn = document.getElementById('delete-btn');
+            const addCustomerBtn = document.getElementById('add-customer-btn');
+            const closeFormBtn = document.getElementById('close-form-btn');
+            const nameInput = document.getElementById('name');
+
+            const importBtn = document.getElementById('import-btn');
+            const exportBtn = document.getElementById('export-btn');
+            const fileInput = document.getElementById('csv-file-input');
+            const clearAllBtn = document.getElementById('clear-all-btn');
+            const clearAllModal = document.getElementById('clear-all-modal');
+            const confirmClearBtn = document.getElementById('confirm-clear-btn');
+            const cancelClearBtn = document.getElementById('cancel-clear-btn');
+            const clearPasswordInput = document.getElementById('clear-password-input');
+            const passwordError = document.getElementById('password-error');
+            const CORRECT_PASSWORD = '270679';
+
+            let customers = [];
+            let editingIndex = -1;
+
+            function closeForm() {
+                formCard.classList.add('hidden');
+            }
+
+            function openForm() {
+                formCard.classList.remove('hidden');
+            }
+
+            function showStatusMessage(message, type = 'success') {
+                statusMessage.textContent = message;
+                statusMessage.className = `message-box ${type}`;
+                statusMessage.style.display = 'block';
+                setTimeout(() => {
+                    statusMessage.style.opacity = '1';
+                }, 10);
+                setTimeout(() => {
+                    statusMessage.style.opacity = '0';
+                    setTimeout(() => {
+                        statusMessage.style.display = 'none';
+                    }, 500);
+                }, 3000);
+            }
+
+            function sortCustomers() {
+                customers.sort((a, b) => a.name.localeCompare(b.name));
+            }
+
+            function loadCustomers() {
+                const storedData = localStorage.getItem('customers');
+                if (storedData) {
+                    customers = JSON.parse(storedData);
+                    sortCustomers();
+                }
+            }
+
+            function saveCustomers() {
+                localStorage.setItem('customers', JSON.stringify(customers));
+            }
+            
+            function filterAndRenderCustomers() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const filteredCustomers = customers.filter(customer =>
+                    Object.values(customer).some(value =>
+                        value.toLowerCase().includes(searchTerm)
+                    )
+                );
+                
+                customerTableBody.innerHTML = '';
+                customerCardsContainer.innerHTML = '';
+
+                if (filteredCustomers.length === 0) {
+                    noCustomersMessage.classList.remove('hidden');
+                    customerTable.classList.add('hidden');
+                    return;
+                } else {
+                    noCustomersMessage.classList.add('hidden');
+                    customerTable.classList.remove('hidden');
+                }
+                
+                filteredCustomers.forEach((customer) => {
+                    const originalIndex = customers.indexOf(customer);
+                    const row = document.createElement('tr');
+                    row.className = 'border-b border-gray-200 last:border-0 hover:bg-gray-50 text-sm customer-row-compact'; 
+                    row.innerHTML = `
+                        <td data-index="${originalIndex}" class="py-2 px-4 text-left font-medium cursor-pointer text-blue-600 hover:text-blue-800">${customer.name}</td>
+                        <td class="py-2 px-4 text-left">${customer.phone}</td>
+                        <td class="py-2 px-4 text-left">${customer.street}</td>
+                        <td class="py-2 px-4 text-left">${customer.city}</td>
+                    `;
+                    customerTableBody.appendChild(row);
+
+                    const card = document.createElement('div');
+                    card.className = 'customer-card cursor-pointer';
+                    card.setAttribute('data-index', originalIndex);
+                    card.innerHTML = `
+                        <div>
+                            <span class="label">Name</span>
+                            <span>${customer.name}</span>
+                        </div>
+                        <div>
+                            <span class="label">Telefon</span>
+                            <span>${customer.phone}</span>
+                        </div>
+                        <div>
+                            <span class="label">Straße</span>
+                            <span>${customer.street}</span>
+                        </div>
+                        <div>
+                            <span class="label">Ort</span>
+                            <span>${customer.city}</span>
+                        </div>
+                    `;
+                    customerCardsContainer.appendChild(card);
+                });
+            }
+
+            function resetForm() {
+                form.reset();
+                editingIndex = -1;
+                submitBtn.textContent = 'Hinzufügen';
+                formHeading.textContent = 'Neuen Kunden hinzufügen';
+                submitBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                cancelBtn.classList.add('hidden');
+                deleteInFormBtn.classList.add('hidden');
+            }
+            
+            function showSuccessOnButton(message) {
+                const originalText = submitBtn.textContent;
+                const originalClasses = submitBtn.className;
+
+                submitBtn.textContent = message;
+                submitBtn.classList.remove('bg-blue-600', 'bg-green-500', 'hover:bg-blue-700', 'hover:bg-green-600');
+                submitBtn.classList.add('bg-green-500', 'hover:bg-green-600', 'text-white');
+
+                setTimeout(() => {
+                    submitBtn.textContent = originalText;
+                    submitBtn.className = originalClasses;
+                    resetForm();
+                    closeForm();
+                }, 1500);
+            }
+
+            // Funktion zur Überprüfung von Duplikaten
+            function isNameDuplicate(name, currentIndex) {
+                return customers.some((customer, index) => 
+                    customer.name.toLowerCase() === name.toLowerCase() && index !== currentIndex
+                );
+            }
+
+            addCustomerBtn.addEventListener('click', () => {
+                resetForm();
+                openForm();
+            });
+
+            closeFormBtn.addEventListener('click', () => {
+                closeForm();
+                resetForm();
+            });
+
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const name = nameInput.value.trim();
+                const phone = document.getElementById('phone').value;
+                const street = document.getElementById('street').value;
+                const city = document.getElementById('city').value;
+                const customerData = { name, phone, street, city };
+                
+                // Überprüfen, ob es sich um einen neuen Kunden handelt und ob der Name bereits existiert
+                if (editingIndex === -1 && isNameDuplicate(name, -1)) {
+                    showStatusMessage('Ein Kunde mit diesem Namen existiert bereits.', 'error');
+                    return;
+                }
+                
+                // Überprüfen, ob ein Kunde bearbeitet wird und ob der neue Name ein Duplikat ist
+                if (editingIndex !== -1 && isNameDuplicate(name, editingIndex)) {
+                     showStatusMessage('Ein anderer Kunde hat bereits diesen Namen.', 'error');
+                     return;
+                }
+                
+                if (editingIndex !== -1) {
+                    customers[editingIndex] = customerData;
+                    sortCustomers();
+                    saveCustomers();
+                    filterAndRenderCustomers();
+                    showSuccessOnButton('Bearbeitet!');
+                } else {
+                    customers.push(customerData);
+                    sortCustomers();
+                    saveCustomers();
+                    filterAndRenderCustomers();
+                    showSuccessOnButton('Hinzugefügt!');
+                }
+            });
+            
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                
+                if (target.tagName === 'TD' && target.dataset.index) {
+                    const index = parseInt(target.dataset.index);
+                    editingIndex = index;
+                    const customerToEdit = customers[index];
+                    document.getElementById('name').value = customerToEdit.name;
+                    document.getElementById('phone').value = customerToEdit.phone;
+                    document.getElementById('street').value = customerToEdit.street;
+                    document.getElementById('city').value = customerToEdit.city;
+
+                    formHeading.textContent = 'Kunden bearbeiten';
+                    submitBtn.textContent = 'Speichern';
+                    submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    submitBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                    cancelBtn.classList.remove('hidden');
+                    deleteInFormBtn.classList.remove('hidden');
+                    
+                    openForm();
+                }
+                
+                if (target.classList.contains('customer-card') || target.closest('.customer-card')) {
+                    const card = target.classList.contains('customer-card') ? target : target.closest('.customer-card');
+                    const index = parseInt(card.dataset.index);
+                    editingIndex = index;
+                    const customerToEdit = customers[index];
+                    document.getElementById('name').value = customerToEdit.name;
+                    document.getElementById('phone').value = customerToEdit.phone;
+                    document.getElementById('street').value = customerToEdit.street;
+                    document.getElementById('city').value = customerToEdit.city;
+
+                    formHeading.textContent = 'Kunden bearbeiten';
+                    submitBtn.textContent = 'Speichern';
+                    submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    submitBtn.classList.add('bg-green-500', 'hover:bg-green-600');
+                    cancelBtn.classList.remove('hidden');
+                    deleteInFormBtn.classList.remove('hidden');
+
+                    openForm();
+                }
+            });
+            
+            deleteInFormBtn.addEventListener('click', () => {
+                if (editingIndex !== -1) {
+                    deleteModal.style.display = 'flex';
+                    confirmDeleteBtn.onclick = () => {
+                        customers.splice(editingIndex, 1);
+                        sortCustomers();
+                        saveCustomers();
+                        filterAndRenderCustomers();
+                        deleteModal.style.display = 'none';
+                        resetForm();
+                        closeForm();
+                    };
+                }
+            });
+
+            searchInput.addEventListener('input', filterAndRenderCustomers);
+
+            cancelBtn.addEventListener('click', () => {
+                resetForm();
+                closeForm();
+            });
+
+            cancelDeleteBtn.addEventListener('click', () => {
+                deleteModal.style.display = 'none';
+            });
+            
+            // CSV Import
+            importBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const csv = event.target.result;
+                    const lines = csv.split('\n').slice(1);
+                    const importedCustomers = lines.map(line => {
+                        const [name, phone, street, city] = line.split(';');
+                        return { name: name ? name.trim() : '', phone: phone ? phone.trim() : '', street: street ? street.trim() : '', city: city ? city.trim() : '' };
+                    }).filter(customer => customer.name);
+
+                    let newCustomersCount = 0;
+                    let duplicatesCount = 0;
+
+                    importedCustomers.forEach(importedCustomer => {
+                        const isDuplicate = customers.some(existingCustomer => existingCustomer.name === importedCustomer.name);
+                        if (!isDuplicate) {
+                            customers.push(importedCustomer);
+                            newCustomersCount++;
+                        } else {
+                            duplicatesCount++;
+                        }
+                    });
+
+                    if (newCustomersCount > 0 || duplicatesCount > 0) {
+                        sortCustomers();
+                        saveCustomers();
+                        filterAndRenderCustomers();
+                        showStatusMessage(`Import abgeschlossen: ${newCustomersCount} neue Kunden hinzugefügt, ${duplicatesCount} Duplikate übersprungen.`, 'success');
+                    } else {
+                        showStatusMessage('Keine neuen Kunden zum Importieren gefunden.', 'error');
+                    }
+                };
+                reader.readAsText(file, 'UTF-8'); // Versucht es zuerst mit UTF-8
+                // Wenn es nicht funktioniert, kannst du es mit 'ISO-8859-1' versuchen.
+                // reader.readAsText(file, 'ISO-8859-1');
+                e.target.value = '';
+            });
+
+            // CSV Export
+            exportBtn.addEventListener('click', () => {
+                if (customers.length === 0) {
+                    showStatusMessage('Keine Kunden zum Exportieren vorhanden.', 'error');
+                    return;
+                }
+                const csvHeader = "Name;Telefon;Straße;Ort\n";
+                const csvContent = customers.map(c => `${c.name};${c.phone};${c.street};${c.city}`).join('\n');
+                const csvData = csvHeader + csvContent;
+
+                const blob = new Blob([csvData], { type: 'text/csv;charset=UTF-8;' });
+                const link = document.createElement('a');
+                if (link.download !== undefined) {
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', 'kunden.csv');
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    showStatusMessage('Kundenliste erfolgreich exportiert!', 'success');
+                }
+            });
+
+            // Clear All Functionality
+            clearAllBtn.addEventListener('click', () => {
+                if (customers.length === 0) {
+                    showStatusMessage('Die Kundenliste ist bereits leer.', 'error');
+                    return;
+                }
+                clearAllModal.style.display = 'flex';
+                clearPasswordInput.value = '';
+                passwordError.classList.add('hidden');
+                clearPasswordInput.focus();
+            });
+
+            confirmClearBtn.addEventListener('click', () => {
+                if (clearPasswordInput.value === CORRECT_PASSWORD) {
+                    customers = [];
+                    saveCustomers();
+                    filterAndRenderCustomers();
+                    clearAllModal.style.display = 'none';
+                    showStatusMessage('Alle Kundendaten wurden gelöscht!', 'success');
+                } else {
+                    passwordError.classList.remove('hidden');
+                }
+            });
+
+            cancelClearBtn.addEventListener('click', () => {
+                clearAllModal.style.display = 'none';
+            });
+
+            loadCustomers();
+            filterAndRenderCustomers();
+        });
+    </script>
+</body>
+</html>
